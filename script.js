@@ -32,6 +32,27 @@ document.addEventListener('DOMContentLoaded', function() {
   if (zipInput) {
     zipInput.addEventListener('input', updateVariables);
   }
+
+  // Meta Pixel - AddPaymentInfo: fires once when the user first interacts with the checkout form
+  const checkoutForm = document.getElementById('checkout-form');
+  if (checkoutForm) {
+    let addPaymentInfoFired = false;
+    checkoutForm.addEventListener('input', function() {
+      if (!addPaymentInfoFired) {
+        addPaymentInfoFired = true;
+        updateVariables();
+        fbq('init', '935724062207149', {
+          em: userEmail,
+          zp: userZip,
+          ct: userCity
+        });
+        fbq('track', 'AddPaymentInfo', {
+          currency: 'USD',
+          value: getCartTotal()
+        });
+      }
+    });
+  }
 });
 
 // Get the cart count element
@@ -46,6 +67,18 @@ function updateCartCount() {
     cartCountElement.textContent = cartCount;
 }
 
+// Helper: build content_ids and contents arrays from the cart
+function getCartPixelContents() {
+    const contentIds = [];
+    const contents = [];
+    for (const name in cart) {
+        const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        contentIds.push(id);
+        contents.push({ id: id, quantity: cart[name].quantity });
+    }
+    return { contentIds, contents };
+}
+
 // Function to add an item to the cart
 function addToCart(name, price) {
     if (cart[name]) {
@@ -56,6 +89,21 @@ function addToCart(name, price) {
     updateCartCount();
     showNotification(`Added ${name} to cart!`);
     saveCartToLocalStorage();
+
+    // Meta Pixel - AddToCart event
+    const productId = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    fbq('init', '935724062207149', {
+        em: userEmail,
+        zp: userZip,
+        ct: userCity
+    });
+    fbq('track', 'AddToCart', {
+        content_ids: [productId],
+        content_type: 'product',
+        contents: [{ id: productId, quantity: 1 }],
+        currency: 'USD',
+        value: price
+    });
 }
 
 // Function to remove an item from the cart
@@ -117,12 +165,47 @@ if (document.getElementById('cart-table')) {
 
 // Function to initiate checkout
 function initiateCheckout() {
+    // Meta Pixel - InitiateCheckout event
+    const { contentIds, contents } = getCartPixelContents();
+    const numItems = Object.values(cart).reduce((acc, item) => acc + item.quantity, 0);
+    fbq('init', '935724062207149', {
+        em: userEmail,
+        zp: userZip,
+        ct: userCity
+    });
+    fbq('track', 'InitiateCheckout', {
+        content_ids: contentIds,
+        contents: contents,
+        currency: 'USD',
+        num_items: numItems,
+        value: getCartTotal()
+    });
+
     // Redirect to the checkout page
     window.location.href = 'checkout.html';
 }
 
 // Function to complete purchase
 function completePurchase() {
+    // Meta Pixel - Purchase event (fired before cart is cleared)
+    updateVariables();
+    const { contentIds, contents } = getCartPixelContents();
+    const numItems = Object.values(cart).reduce((acc, item) => acc + item.quantity, 0);
+    const totalValue = getCartTotal();
+    fbq('init', '935724062207149', {
+        em: userEmail,
+        zp: userZip,
+        ct: userCity
+    });
+    fbq('track', 'Purchase', {
+        content_ids: contentIds,
+        content_type: 'product',
+        contents: contents,
+        currency: 'USD',
+        num_items: numItems,
+        value: totalValue
+    });
+
     // Clear the cart
     cart = {};
     saveCartToLocalStorage();
