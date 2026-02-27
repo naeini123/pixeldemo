@@ -56,18 +56,6 @@ function addToCart(name, price) {
     updateCartCount();
     showNotification(`Added ${name} to cart!`);
     saveCartToLocalStorage();
-    // Meta Pixel AddToCart Event
-    if (typeof fbq !== 'undefined') {
-        var contentId = name.toLowerCase().replace(/ /g, '-');
-        fbq('init', '935724062207149');
-        fbq('track', 'AddToCart', {
-            content_ids: [contentId],
-            content_type: 'product',
-            contents: [{id: contentId, quantity: cart[name].quantity}],
-            currency: 'USD',
-            value: price
-        });
-    }
 }
 
 // Function to remove an item from the cart
@@ -135,36 +123,6 @@ function initiateCheckout() {
 
 // Function to complete purchase
 function completePurchase() {
-    // Save purchase data to sessionStorage for Meta Pixel Purchase event
-    var purchaseContentIds = Object.keys(cart).map(function(name) { return name.toLowerCase().replace(/ /g, '-'); });
-    var purchaseContents = Object.keys(cart).map(function(name) {
-        return {id: name.toLowerCase().replace(/ /g, '-'), quantity: cart[name].quantity};
-    });
-    var purchaseNumItems = Object.values(cart).reduce(function(acc, item) { return acc + item.quantity; }, 0);
-    var purchaseValue = Object.values(cart).reduce(function(acc, item) { return acc + (item.price * item.quantity); }, 0);
-    sessionStorage.setItem('lastPurchase', JSON.stringify({
-        contentIds: purchaseContentIds,
-        contents: purchaseContents,
-        numItems: purchaseNumItems,
-        value: purchaseValue
-    }));
-    // Save user data from checkout form for advanced matching
-    var nameVal = document.getElementById('name') ? document.getElementById('name').value : '';
-    var nameParts = nameVal.trim().split(' ');
-    var fnVal = nameParts[0] || '';
-    var lnVal = nameParts.slice(1).join(' ') || '';
-    var emVal = document.getElementById('email') ? document.getElementById('email').value : '';
-    var ctVal = document.getElementById('city') ? document.getElementById('city').value : '';
-    var stVal = document.getElementById('state') ? document.getElementById('state').value : '';
-    var zpVal = document.getElementById('zip') ? document.getElementById('zip').value : '';
-    sessionStorage.setItem('checkoutUser', JSON.stringify({
-        em: emVal,
-        fn: fnVal,
-        ln: lnVal,
-        ct: ctVal,
-        st: stVal,
-        zp: zpVal
-    }));
     // Clear the cart
     cart = {};
     saveCartToLocalStorage();
