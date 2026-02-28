@@ -46,6 +46,28 @@ function updateCartCount() {
     cartCountElement.textContent = cartCount;
 }
 
+// ─── Meta Pixel: Product ID lookup ────────────────────────────────────────────
+// Maps product names to stable content_ids used in Pixel events
+const productIds = {
+    'Liverpool Jersey': 'liverpool-jersey',
+    'Nike Air Max - Liverpool Shoes': 'nike-air-max-liverpool',
+    'Liverpool 24-25 Champions Shirt': 'lfc-champions-shirt-2425'
+};
+
+// ─── Meta Pixel: ViewContent ───────────────────────────────────────────────────
+// Fires when a user clicks on a product (signals interest in a specific item)
+function trackViewContent(contentId, contentName, value) {
+    fbq('track', 'ViewContent', {
+        content_ids: [contentId],
+        content_type: 'product',
+        contents: [{ id: contentId, quantity: 1 }],
+        content_name: contentName,
+        currency: 'USD',
+        value: value
+    });
+}
+
+// ─── Meta Pixel: AddToCart ─────────────────────────────────────────────────────
 // Function to add an item to the cart
 function addToCart(name, price) {
     if (cart[name]) {
@@ -56,6 +78,17 @@ function addToCart(name, price) {
     updateCartCount();
     showNotification(`Added ${name} to cart!`);
     saveCartToLocalStorage();
+
+    // Fire Meta Pixel AddToCart event
+    const contentId = productIds[name] || name.toLowerCase().replace(/\s+/g, '-');
+    fbq('track', 'AddToCart', {
+        content_ids: [contentId],
+        content_type: 'product',
+        contents: [{ id: contentId, quantity: 1 }],
+        content_name: name,
+        currency: 'USD',
+        value: price
+    });
 }
 
 // Function to remove an item from the cart
@@ -115,18 +148,89 @@ if (document.getElementById('cart-table')) {
     displayCartTable();
 }
 
+// ─── Meta Pixel: InitiateCheckout ──────────────────────────────────────────────
 // Function to initiate checkout
 function initiateCheckout() {
+    // Build cart contents array for Pixel
+    const contents = Object.keys(cart).map(name => ({
+        id: productIds[name] || name.toLowerCase().replace(/\s+/g, '-'),
+        quantity: cart[name].quantity
+    }));
+    const contentIds = contents.map(c => c.id);
+    const numItems = Object.values(cart).reduce((acc, item) => acc + item.quantity, 0);
+    const totalValue = getCartTotal();
+
+    // Fire Meta Pixel InitiateCheckout event
+    fbq('track', 'InitiateCheckout', {
+        content_ids: contentIds,
+        contents: contents,
+        currency: 'USD',
+        num_items: numItems,
+        value: totalValue
+    });
+
     // Redirect to the checkout page
     window.location.href = 'checkout.html';
 }
 
+// ─── Meta Pixel: InitiateCheckout (on checkout page load) ─────────────────────
+// Also fires when the checkout page loads directly (e.g., via direct URL)
+if (document.getElementById('cart-summary-table')) {
+    loadCartFromLocalStorage();
+    displayCartSummary();
+
+    // Build cart contents array for Pixel
+    const checkoutContents = Object.keys(cart).map(name => ({
+        id: productIds[name] || name.toLowerCase().replace(/\s+/g, '-'),
+        quantity: cart[name].quantity
+    }));
+    const checkoutContentIds = checkoutContents.map(c => c.id);
+    const checkoutNumItems = Object.values(cart).reduce((acc, item) => acc + item.quantity, 0);
+    const checkoutTotal = getCartTotal();
+
+    fbq('track', 'InitiateCheckout', {
+        content_ids: checkoutContentIds,
+        contents: checkoutContents,
+        currency: 'USD',
+        num_items: checkoutNumItems,
+        value: checkoutTotal
+    });
+}
+
+// ─── Meta Pixel: Purchase ──────────────────────────────────────────────────────
 // Function to complete purchase
 function completePurchase() {
+    // Capture cart data before clearing
+    const purchaseContents = Object.keys(cart).map(name => ({
+        id: productIds[name] || name.toLowerCase().replace(/\s+/g, '-'),
+        quantity: cart[name].quantity
+    }));
+    const purchaseContentIds = purchaseContents.map(c => c.id);
+    const purchaseNumItems = Object.values(cart).reduce((acc, item) => acc + item.quantity, 0);
+    const purchaseTotal = getCartTotal();
+
+    // Re-initialise Pixel with PII from the checkout form (manual advanced matching)
+    fbq('init', '935724062207149', {
+        em: userEmail,
+        ct: userCity ? userCity.toLowerCase().replace(/\s+/g, '') : '',
+        zp: userZip
+    });
+
+    // Fire Meta Pixel Purchase event
+    fbq('track', 'Purchase', {
+        content_ids: purchaseContentIds,
+        content_type: 'product',
+        contents: purchaseContents,
+        currency: 'USD',
+        num_items: purchaseNumItems,
+        value: purchaseTotal
+    });
+
     // Clear the cart
     cart = {};
     saveCartToLocalStorage();
     updateCartCount();
+
     // Redirect to the purchase confirmation page
     window.location.href = 'purchase-confirmation.html';
 }
@@ -185,9 +289,4 @@ function displayCartSummary() {
     // Calculate and display the cart total
     const total = getCartTotal();
     document.getElementById('cart-total').textContent = total.toFixed(2);
-}
-// Display the cart summary when the checkout page loads
-if (document.getElementById('cart-summary-table')) {
-    loadCartFromLocalStorage();
-    displayCartSummary();
 }
