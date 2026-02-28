@@ -3,11 +3,11 @@
 // This runs entirely in the browser for static sites (no Node/server required).
 //
 // Configuration
-const CAPI_PIXEL_ID    = '935724062207149';
+const CAPI_PIXEL_ID     = '935724062207149';
 const CAPI_ACCESS_TOKEN = 'EAAUqKAlvZC5EBQ9zScIwbZBJ221V5vvWgo3gNKDMsLVezOZC2dMJsA6ObddsxWu07VxTSbMJuMYd0kD7MqYxm2ljXELd9fvyKUcWIJhqqkGnGtrPlNffzdSRz1sciQOZCw7mjPpcDUlTblp453ZAw1qbcTZAPHTqPc65H93LB8oYZArpr4bBMG6vHKgP9dD1gZDZD';
-const CAPI_TEST_CODE   = 'TEST44494';
-const CAPI_API_VERSION = 'v21.0';
-const CAPI_ENDPOINT    = `https://graph.facebook.com/${CAPI_API_VERSION}/${CAPI_PIXEL_ID}/events`;
+const CAPI_TEST_CODE    = 'TEST44494';
+const CAPI_API_VERSION  = 'v21.0';
+const CAPI_ENDPOINT     = `https://graph.facebook.com/${CAPI_API_VERSION}/${CAPI_PIXEL_ID}/events`;
 
 // ─── Utility: SHA-256 hash (returns lowercase hex string) ─────────────────────
 async function sha256(value) {
@@ -29,6 +29,10 @@ function generateEventId() {
 }
 
 // ─── Main: send CAPI Purchase event ───────────────────────────────────────────
+// Returns a Promise that resolves once the CAPI request completes (or fails).
+// The caller MUST await this before navigating away from the page so the
+// browser does not cancel the in-flight request on unload.
+//
 // Parameters:
 //   eventId       – shared UUID used for browser-pixel deduplication
 //   email         – raw email string (will be hashed)
@@ -74,12 +78,15 @@ async function sendCapiPurchase({ eventId, email, city, zip, contents, contentId
     };
 
     try {
+        // keepalive: true ensures the browser completes this request even if the
+        // page navigates away immediately after (fixes the redirect-race condition).
         const response = await fetch(
             `${CAPI_ENDPOINT}?access_token=${CAPI_ACCESS_TOKEN}`,
             {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify(payload)
+                method:    'POST',
+                headers:   { 'Content-Type': 'application/json' },
+                body:      JSON.stringify(payload),
+                keepalive: true
             }
         );
         const result = await response.json();

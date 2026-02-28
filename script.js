@@ -199,7 +199,7 @@ if (document.getElementById('cart-summary-table')) {
 
 // ─── Meta Pixel: Purchase ──────────────────────────────────────────────────────
 // Function to complete purchase
-function completePurchase() {
+async function completePurchase() {
     // Capture cart data before clearing
     const purchaseContents = Object.keys(cart).map(name => ({
         id: productIds[name] || name.toLowerCase().replace(/\s+/g, '-'),
@@ -230,7 +230,8 @@ function completePurchase() {
     }, { eventID: purchaseEventId });
 
     // ─── Meta CAPI: send server-side Purchase event ────────────────────────────
-    sendCapiPurchase({
+    // Awaited so the fetch completes before the page navigates away.
+    await sendCapiPurchase({
         eventId:    purchaseEventId,
         email:      userEmail,
         city:       userCity,
