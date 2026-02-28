@@ -7,6 +7,26 @@
     <link id="favicon" rel="icon" href="Liverpool-FC-80s-icon.png" type="image/png">
     <link rel="stylesheet" href="styles.css">
     <!-- Google Tag Manager Should Go Here -->
+
+    <!-- Meta Pixel Base Code -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window,document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+
+      fbq('init', '935724062207149');
+      fbq('track', 'PageView');
+    </script>
+    <noscript>
+      <img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=935724062207149&ev=PageView&noscript=1"/>
+    </noscript>
+    <!-- End Meta Pixel Base Code -->
 </head>
 <body>
     <!-- Google Tag Manager (noscript) should go here-->
@@ -28,7 +48,7 @@
                     </div>
                     <h3>Liverpool Jersey</h3>
                     <p>$100</p>
-                    <button onclick="addToCart('Liverpool Jersey', 100)">Add to Cart</button>
+                    <button onclick="trackViewContent('liverpool-jersey', 'Liverpool Jersey', 100); addToCart('Liverpool Jersey', 100)">Add to Cart</button>
                 </div>
                 <div class="product">
                     <div class="content">
@@ -36,7 +56,7 @@
                     </div>
                     <h3>Nike Air Max - Liverpool Shoes</h3>
                     <p>$150</p>
-                    <button onclick="addToCart('Nike Air Max - Liverpool Shoes', 150)">Add to Cart</button>
+                    <button onclick="trackViewContent('nike-air-max-liverpool', 'Nike Air Max - Liverpool Shoes', 150); addToCart('Nike Air Max - Liverpool Shoes', 150)">Add to Cart</button>
                 </div>
                 <div class="product">
                 <div class="content">
@@ -44,7 +64,7 @@
                     </div>
                     <h3>Liverpool 24-25 Champions Shirt</h3>
                     <p>$175</p>
-                    <button onclick="addToCart('Liverpool 24-25 Champions Shirt', 175)">Add to Cart</button>
+                    <button onclick="trackViewContent('lfc-champions-shirt-2425', 'Liverpool 24-25 Champions Shirt', 175); addToCart('Liverpool 24-25 Champions Shirt', 175)">Add to Cart</button>
                 </div>
             </div>
     </main>
